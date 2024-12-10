@@ -1,0 +1,22 @@
+# Core
+fastapi==0.115.6
+uvicorn==0.32.1
+python-jose[cryptography]
+python-multipart
+
+# Database
+psycopg2-binary==2.9.10
+redis==5.2.1
+redis-om==0.3.3
+
+# AI/ML
+langchain==0.3.11
+google-cloud-aiplatform==1.74.0
+
+# Development
+pytest==8.3.4
+black==24.10.0
+isort==5.13.2
+mypy==1.13.0
+bandit==1.8.0
+pre-commit==4.0.1
