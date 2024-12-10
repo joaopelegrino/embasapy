@@ -20,3 +20,6 @@ isort==5.13.2
 mypy==1.13.0
 bandit==1.8.0
 pre-commit==4.0.1
+loguru==0.7.2
+pydantic-settings==2.2.1
+passlib[bcrypt]==1.7.4
