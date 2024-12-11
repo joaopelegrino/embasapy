@@ -68,3 +68,27 @@ def test_list_analyses_unauthorized(client):
     """Testa listagem sem autenticação"""
     response = client.get("/analysis/")
     assert response.status_code == 403
+
+def test_create_analysis_content_too_large(client, headers):
+    """Testa criação com conteúdo muito grande"""
+    request = {"content": "x" * 5001}  # Conteúdo maior que 5000 caracteres
+    response = client.post("/analysis/", json=request, headers=headers)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Content too large"
+
+def test_root_endpoint(client):
+    """Testa endpoint raiz"""
+    response = client.get("/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["app"] == "EMBASA API"
+    assert data["version"] == "0.1.0"
+    assert data["status"] == "running"
+    assert data["env"] == "test"
+
+def test_invalid_api_key(client):
+    """Testa autenticação com chave inválida"""
+    headers = {"X-API-Key": "invalid_key"}
+    response = client.get("/analysis/", headers=headers)
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Could not validate API key"
