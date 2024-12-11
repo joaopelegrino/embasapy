@@ -41,16 +41,30 @@ def test_get_analysis(client, headers):
     assert response.status_code == 200
     assert response.json()["id"] == analysis_id
 
-def test_list_analyses(client):
+def test_list_analyses(client, headers):
     """Testa listagem de análises via API"""
     # Criar algumas análises
     for i in range(3):
         request = {"content": f"Test content {i}"}
-        client.post("/analysis/", json=request)
+        client.post("/analysis/", json=request, headers=headers)
     
     # Listar com paginação
-    response = client.get("/analysis/?page=1&size=2")
+    response = client.get("/analysis/?page=1&size=2", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert len(data["items"]) == 2
-    assert data["total"] >= 3 
+    assert data["total"] >= 3
+
+def test_get_analysis_not_found(client, headers):
+    """Testa recuperação de análise inexistente"""
+    response = client.get(
+        f"/analysis/{uuid4()}", 
+        headers=headers
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Analysis not found"
+
+def test_list_analyses_unauthorized(client):
+    """Testa listagem sem autenticação"""
+    response = client.get("/analysis/")
+    assert response.status_code == 403
