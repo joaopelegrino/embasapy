@@ -1,15 +1,16 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import base
-from app.core.security import get_api_key
+
+from app.api.routes import analysis
+from app.core.config import settings
 
 app = FastAPI(
     title="EMBASA API",
-    description="API para processamento de dados da EMBASA",
+    description="API para análise de conteúdo",
     version="0.1.0"
 )
 
-# CORS configuration
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,18 +19,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Rotas base
-app.include_router(base.router, prefix="/api/v1", dependencies=[Depends(get_api_key)])
+# Rotas
+app.include_router(
+    analysis.router,
+    prefix="/analysis",
+    tags=["analysis"]
+)
 
-# Health check endpoint
 @app.get("/health")
 async def health_check():
+    """Endpoint de health check"""
     return {"status": "healthy"}
-
-# Error handlers
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request, exc):
-    return {
-        "detail": exc.detail,
-        "status_code": exc.status_code
-    }
