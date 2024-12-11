@@ -11,9 +11,9 @@ from app.core.config import settings
 class AnalysisService:
     """Serviço para processamento de análises"""
     
-    def __init__(self):
+    def __init__(self, cache: Optional[RedisCache] = None):
         self._analyses = {}
-        self._cache = RedisCache()
+        self._cache = cache or RedisCache()
     
     def _generate_hash(self, content: str) -> str:
         return sha256(content.encode()).hexdigest()

@@ -8,8 +8,8 @@ from app.services.analysis import AnalysisService
 class AnalysisHandler:
     """Handler para processamento de análises"""
     
-    def __init__(self):
-        self._service = AnalysisService()
+    def __init__(self, service: Optional[AnalysisService] = None):
+        self._service = service or AnalysisService()
     
     async def create_analysis(self, request: AnalysisRequest) -> AnalysisResponse:
         """Cria uma nova análise"""
