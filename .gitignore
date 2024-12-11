@@ -169,3 +169,6 @@ docs/
 *.tmp
 terminal
 quit
+# Documentação
+docs/
+*.md
