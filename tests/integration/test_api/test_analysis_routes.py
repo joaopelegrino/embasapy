@@ -3,31 +3,41 @@ from fastapi.testclient import TestClient
 from uuid import uuid4
 
 from app.main import app
-from app.api.schemas.analysis import AnalysisRequest
+from app.core.config import settings
 
 @pytest.fixture
 def client():
     return TestClient(app)
 
-def test_create_analysis(client):
+@pytest.fixture
+def headers():
+    return {"X-API-KEY": settings.API_KEY}
+
+def test_create_analysis(client, headers):
     """Testa criação de análise via API"""
     request = {"content": "Test content"}
-    response = client.post("/analysis/", json=request)
+    response = client.post("/analysis/", json=request, headers=headers)
     
     assert response.status_code == 200
     data = response.json()
     assert data["content"] == request["content"]
     assert data["status"] == "processing"
 
-def test_get_analysis(client):
+def test_create_analysis_unauthorized(client):
+    """Testa criação sem API key"""
+    request = {"content": "Test content"}
+    response = client.post("/analysis/", json=request)
+    assert response.status_code == 403
+
+def test_get_analysis(client, headers):
     """Testa recuperação de análise via API"""
     # Primeiro criar uma análise
     request = {"content": "Test content"}
-    create_response = client.post("/analysis/", json=request)
+    create_response = client.post("/analysis/", json=request, headers=headers)
     analysis_id = create_response.json()["id"]
     
     # Depois recuperar
-    response = client.get(f"/analysis/{analysis_id}")
+    response = client.get(f"/analysis/{analysis_id}", headers=headers)
     assert response.status_code == 200
     assert response.json()["id"] == analysis_id
 
