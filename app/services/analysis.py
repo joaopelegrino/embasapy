@@ -2,15 +2,18 @@ from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 from hashlib import sha256
+import json
 
 from app.api.schemas.analysis import AnalysisRequest, AnalysisResponse, AnalysisList
+from app.core.cache import RedisCache
+from app.core.config import settings
 
 class AnalysisService:
     """Serviço para processamento de análises"""
     
     def __init__(self):
         self._analyses = {}
-        self._cache = {}
+        self._cache = RedisCache()
     
     def _generate_hash(self, content: str) -> str:
         return sha256(content.encode()).hexdigest()
@@ -20,8 +23,8 @@ class AnalysisService:
         content_hash = self._generate_hash(request.content)
         
         # Verificar cache
-        if cached := self._cache.get(content_hash):
-            return cached
+        if cached := await self._cache.get(f"analysis:{content_hash}"):
+            return AnalysisResponse(**json.loads(cached))
             
         # Criar nova análise
         analysis_id = str(uuid4())
@@ -34,7 +37,7 @@ class AnalysisService:
         )
         
         self._analyses[analysis_id] = analysis
-        self._cache[content_hash] = analysis
+        await self._cache_result(content_hash, analysis)
         return analysis
     
     async def get_analysis_status(self, analysis_id: UUID) -> Optional[AnalysisResponse]:
@@ -42,8 +45,18 @@ class AnalysisService:
         return self._analyses.get(str(analysis_id))
     
     async def get_cached_result(self, content_hash: str) -> Optional[AnalysisResponse]:
-        """Recupera resultado do cache se disponível"""
-        return self._cache.get(content_hash)
+        """Recupera resultado do cache Redis"""
+        if cached := await self._cache.get(f"analysis:{content_hash}"):
+            return AnalysisResponse(**json.loads(cached))
+        return None
+    
+    async def _cache_result(self, content_hash: str, analysis: AnalysisResponse):
+        """Armazena resultado no cache Redis"""
+        await self._cache.set(
+            f"analysis:{content_hash}",
+            json.dumps(analysis.dict()),
+            expire=settings.REDIS_CACHE_TTL
+        )
     
     async def list_recent_analyses(self, limit: int = 10) -> List[AnalysisResponse]:
         """Lista análises recentes"""
