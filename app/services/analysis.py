@@ -20,23 +20,33 @@ class AnalysisService:
     
     async def process_analysis(self, request: AnalysisRequest) -> AnalysisResponse:
         """Processa uma nova análise de forma assíncrona"""
-        content_hash = self._generate_hash(request.content)
+        if not settings.CACHE_ENABLED:
+            return await self._process_without_cache(request)
         
-        # Verificar cache
-        if cached := await self._cache.get(f"analysis:{content_hash}"):
-            return AnalysisResponse(**json.loads(cached))
-            
-        # Criar nova análise
+        content_hash = self._generate_hash(request.content)
+        if cached := await self.get_cached_result(content_hash):
+            return cached
+        
+        return await self._process_with_cache(request, content_hash)
+    
+    async def _process_without_cache(self, request: AnalysisRequest) -> AnalysisResponse:
+        """Processa análise sem usar cache"""
         analysis_id = str(uuid4())
-        analysis = AnalysisResponse(
+        return AnalysisResponse(
             id=analysis_id,
             status="processing",
             content=request.content,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()
         )
-        
-        self._analyses[analysis_id] = analysis
+    
+    async def _process_with_cache(
+        self, 
+        request: AnalysisRequest, 
+        content_hash: str
+    ) -> AnalysisResponse:
+        """Processa análise usando cache"""
+        analysis = await self._process_without_cache(request)
         await self._cache_result(content_hash, analysis)
         return analysis
     

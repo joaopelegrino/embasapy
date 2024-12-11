@@ -4,6 +4,7 @@ from uuid import uuid4
 from app.services.analysis import AnalysisService
 from app.api.schemas.analysis import AnalysisRequest
 from app.api.handlers.analysis import AnalysisHandler
+from app.config import settings
 
 @pytest.fixture
 async def service():
@@ -51,3 +52,14 @@ async def test_list_integration(service):
     recent = await service.list_recent_analyses(limit=3)
     assert len(recent) == 3
     assert recent[0].created_at >= recent[1].created_at >= recent[2].created_at
+
+async def test_cache_disabled(service_with_mock_cache, monkeypatch):
+    """Testa processamento com cache desabilitado"""
+    monkeypatch.setattr(settings, "CACHE_ENABLED", False)
+    
+    request = AnalysisRequest(content="No cache test")
+    response = await service_with_mock_cache.process_analysis(request)
+    
+    content_hash = service_with_mock_cache._generate_hash(request.content)
+    cached = await service_with_mock_cache.get_cached_result(content_hash)
+    assert cached is None
