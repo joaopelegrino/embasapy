@@ -20,6 +20,11 @@ async def create_analysis(
     service: AnalysisService = Depends(get_analysis_service)
 ):
     """Cria uma nova análise"""
+    if len(request.content) > 5000:  # Limite de 5000 caracteres
+        raise HTTPException(
+            status_code=400,
+            detail="Content too large"
+        )
     handler = AnalysisHandler(service=service)
     return await handler.create_analysis(request)
 
