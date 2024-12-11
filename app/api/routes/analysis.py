@@ -1,30 +1,40 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from app.core.security import get_api_key
-from app.api.schemas.analysis import AnalysisRequest, AnalysisResponse, AnalysisList
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException
+from uuid import UUID
 
-router = APIRouter(prefix="/analysis", tags=["analysis"])
+from app.api.schemas.analysis import AnalysisRequest, AnalysisResponse, AnalysisList
+from app.api.handlers.analysis import AnalysisHandler
+from app.services.analysis import AnalysisService
+from app.api.deps import get_analysis_service
+
+router = APIRouter()
 
 @router.post("/", response_model=AnalysisResponse)
 async def create_analysis(
     request: AnalysisRequest,
-    api_key: str = Depends(get_api_key)
+    service: AnalysisService = Depends(get_analysis_service)
 ):
     """Cria uma nova análise"""
-    pass
+    handler = AnalysisHandler(service=service)
+    return await handler.create_analysis(request)
 
-@router.get("/{analysis_id}", response_model=AnalysisResponse)
+@router.get("/{analysis_id}", response_model=Optional[AnalysisResponse])
 async def get_analysis(
-    analysis_id: str,
-    api_key: str = Depends(get_api_key)
+    analysis_id: UUID,
+    service: AnalysisService = Depends(get_analysis_service)
 ):
     """Recupera uma análise específica"""
-    pass
+    handler = AnalysisHandler(service=service)
+    if result := await handler.get_analysis(analysis_id):
+        return result
+    raise HTTPException(status_code=404, detail="Analysis not found")
 
 @router.get("/", response_model=AnalysisList)
 async def list_analyses(
-    page: int = Query(1, ge=1),
-    size: int = Query(10, ge=1, le=100),
-    api_key: str = Depends(get_api_key)
+    page: int = 1,
+    size: int = 10,
+    service: AnalysisService = Depends(get_analysis_service)
 ):
     """Lista análises paginadas"""
-    pass 
+    handler = AnalysisHandler(service=service)
+    return await handler.list_analyses(page=page, size=size) 
