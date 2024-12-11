@@ -164,3 +164,8 @@ cython_debug/
 docs/
 quit
 terminal
+# Docs e arquivos temporários
+docs/
+*.tmp
+terminal
+quit
