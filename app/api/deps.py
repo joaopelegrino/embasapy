@@ -3,10 +3,16 @@ from fastapi import Depends
 
 from app.core.cache import RedisCache
 from app.services.analysis import AnalysisService
+from app.core.config import settings
 
 async def get_redis() -> AsyncGenerator[RedisCache, None]:
     """Dependency para obter instância do Redis"""
-    cache = RedisCache()
+    if settings.APP_ENV == "test":
+        from tests.mocks.redis_mock import RedisMock
+        cache = RedisMock()
+    else:
+        cache = RedisCache()
+    
     await cache.init()
     try:
         yield cache
