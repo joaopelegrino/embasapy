@@ -6,8 +6,13 @@ from app.api.schemas.analysis import AnalysisRequest, AnalysisResponse, Analysis
 from app.api.handlers.analysis import AnalysisHandler
 from app.services.analysis import AnalysisService
 from app.api.deps import get_analysis_service
+from app.api.routes.base import verify_api_key
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/analysis",
+    tags=["analysis"],
+    dependencies=[Depends(verify_api_key)]
+)
 
 @router.post("/", response_model=AnalysisResponse)
 async def create_analysis(
